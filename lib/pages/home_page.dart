@@ -14,7 +14,10 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         drawer: const MyDrawer(),
-        appBar: AppBar(),
+        appBar: AppBar(
+          title: const Text('H O M E'),
+          foregroundColor: Theme.of(context).colorScheme.primary,
+        ),
     );
   }
 }
