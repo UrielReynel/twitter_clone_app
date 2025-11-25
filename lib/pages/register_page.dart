@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:twitter_clone_app/components/my_button.dart';
+import 'package:twitter_clone_app/components/my_loading_circle.dart';
 import 'package:twitter_clone_app/components/my_text_field.dart';
+import 'package:twitter_clone_app/Services/Auth/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   final void Function()? onTap;
@@ -12,11 +14,49 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  //Acces auth service
+  final _auth = AuthService();
   //Text Editing Controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController pwController = TextEditingController();
   final TextEditingController confirmPwController = TextEditingController();
+
+  //Register button tap
+  void register() async {
+    //passwor match confirm -> create user
+    if (pwController.text == confirmPwController.text) {
+      showLoadingCircle(context);
+
+      try{
+        await _auth.registerEmailPassword(
+          emailController.text,
+          pwController.text,
+        );
+
+        if(mounted) hideLoadingCircle(context);
+      }
+      catch(e){
+        if(mounted){
+          hideLoadingCircle(context);
+
+          if(mounted){
+            showDialog(context: context, builder: (context)=> AlertDialog(
+              title: Text(e.toString()),
+            ));
+          }
+        }
+      }
+    }
+
+    //password don´t match -> show error
+    else{
+      showDialog(context: context, builder: (context)=> const AlertDialog(
+        title: Text("Passwords don´t Match"),
+      ),
+      );
+    }
+  }
 
   //Build UI
   @override
@@ -82,7 +122,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
             //sign up button
             MyButton(text: "Register",
-              onTap: () {},
+              onTap: register,
               ),
               const SizedBox(height: 50),
 

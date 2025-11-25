@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:twitter_clone_app/Services/Auth/auth_service.dart';
 import 'package:twitter_clone_app/components/my_button.dart';
+import 'package:twitter_clone_app/components/my_loading_circle.dart';
 import 'package:twitter_clone_app/components/my_text_field.dart';
 
 class LoginPage extends StatefulWidget {
@@ -12,10 +14,35 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  //Auth Service instance
+  final _auth = AuthService();
+
   //Text Editing Controllers
   final TextEditingController emailController = TextEditingController();
   final TextEditingController pwController = TextEditingController();
 
+  //logIn method
+  void logIn() async {
+    showLoadingCircle(context);
+    //Show loading circle
+    try{
+      await _auth.login(emailController.text, pwController.text);
+      //Pop loading circle
+      if (mounted) hideLoadingCircle(context);
+    }
+    catch(e){
+      
+      //Pop loading circle
+      if(mounted){
+        hideLoadingCircle(context);
+
+        showDialog(context: context, builder: (context)=>AlertDialog(
+          title: Text(e.toString()),
+        ));
+      }
+      
+    }
+  }
   //Build UI
   @override
   Widget build(BuildContext context) {
@@ -75,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
 
             //sign in button
             MyButton(text: "LogIn",
-              onTap: () {},
+              onTap: logIn,
               ),
               const SizedBox(height: 50),
               //Not a member? register now

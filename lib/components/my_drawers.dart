@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:twitter_clone_app/Services/Auth/auth_service.dart';
 import 'package:twitter_clone_app/components/my_drawer_tile.dart';
 import 'package:twitter_clone_app/pages/settings_page.dart';
 
 class MyDrawer extends StatelessWidget {
-  const MyDrawer({super.key});
+  MyDrawer({super.key});
+
+  //Acces auth service
+  final _auth = AuthService();
+
+  //Logout method
+  void logout(){
+    _auth.logout();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +60,15 @@ class MyDrawer extends StatelessWidget {
                   builder: (context) => SettingsPage()));
               },
             ),
+            
+            const Spacer(),
+
             //logout list tile
+            MyDrawerTile(
+              title: "L O G O U T",
+              icon: Icons.logout,
+              onTap: logout,
+              )
           ],
         ),
       ),
