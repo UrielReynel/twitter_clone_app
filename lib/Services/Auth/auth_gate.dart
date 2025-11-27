@@ -1,27 +1,27 @@
+/*
+  UBICACIÓN: lib/services/auth/auth_gate.dart
+*/
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:twitter_clone_app/Services/Auth/login_or_register.dart';
-import 'package:twitter_clone_app/pages/home_page.dart';
+import 'login_or_register.dart';
+import '../../pages/home_page.dart'; // Asegúrate de que la ruta a home_page sea correcta
 
-class AuthGate extends StatefulWidget {
+class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
-  @override
-  State<AuthGate> createState() => _AuthGateState();
-}
-
-class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          //User is logged in
+          // Si el usuario está logueado
           if (snapshot.hasData) {
             return const HomePage();
           }
-          //User is NOT logged in
+          
+          // Si el usuario NO está logueado
           else {
             return const LoginOrRegister();
           }

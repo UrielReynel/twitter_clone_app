@@ -1,48 +1,51 @@
+/*
+  UBICACIÓN: lib/services/auth/auth_service.dart
+*/
+
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
-  //get instance of FirebaseAuth
-  final _auth = FirebaseAuth.instance;
+  // Instancia de Firebase Auth
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
-  //get current user & uid
-  User? get currentUser => _auth.currentUser;
-  String? get userId => _auth.currentUser?.uid;
-
-  //login -> email & password
-  Future<User?> login(String email, String password) async {
-    try{
-      final userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      return userCredential.user;
-    }
-    //catch errors
-    on FirebaseAuthException catch (e){
-      throw Exception(e.message);
-    }
+  // Obtener usuario actual
+  User? getCurrentUser() {
+    return _firebaseAuth.currentUser;
   }
 
-  //register -> email & password
-  Future<User?> registerEmailPassword(String email, String password) async {
-    //Attempt to register new user
-    try{
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
+  // Obtener UID actual (muy útil para consultas a la BD)
+  String getCurrentUid() {
+    return _firebaseAuth.currentUser!.uid;
+  }
+
+  // Iniciar Sesión (Login)
+  Future<UserCredential> loginEmailPassword(String email, String password) async {
+    try {
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email, 
+        password: password
       );
-      return userCredential.user;
-    }
-    //catch errors
-    on FirebaseAuthException catch (e){
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
       throw Exception(e.code);
     }
   }
 
-  //logout
-  Future<void> logout() async {
-    await _auth.signOut();
+  // Registrarse (Sign Up)
+  Future<UserCredential> registerEmailPassword(String email, String password) async {
+    try {
+      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email, 
+        password: password
+      );
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.code);
+    }
   }
 
-  //delete account
+  // Cerrar Sesión (Logout)
+  Future<void> logout() async {
+    await _firebaseAuth.signOut();
+  }
 }

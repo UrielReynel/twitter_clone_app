@@ -1,131 +1,116 @@
+/*
+  UBICACIÓN: lib/pages/login_page.dart
+*/
+
 import 'package:flutter/material.dart';
-import 'package:twitter_clone_app/Services/Auth/auth_service.dart';
-import 'package:twitter_clone_app/components/my_button.dart';
-import 'package:twitter_clone_app/components/my_loading_circle.dart';
-import 'package:twitter_clone_app/components/my_text_field.dart';
+import '../services/auth/auth_service.dart';
+import '../components/my_button.dart';
+import '../components/my_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   final void Function()? onTap;
 
-  const LoginPage({super.key, this.onTap});
+  const LoginPage({super.key, required this.onTap});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  //Auth Service instance
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final _auth = AuthService();
 
-  //Text Editing Controllers
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController pwController = TextEditingController();
-
-  //logIn method
-  void logIn() async {
-    showLoadingCircle(context);
-    //Show loading circle
-    try{
-      await _auth.login(emailController.text, pwController.text);
-      //Pop loading circle
-      if (mounted) hideLoadingCircle(context);
-    }
-    catch(e){
-      
-      //Pop loading circle
-      if(mounted){
-        hideLoadingCircle(context);
-
-        showDialog(context: context, builder: (context)=>AlertDialog(
-          title: Text(e.toString()),
-        ));
+  void login() async {
+    try {
+      await _auth.loginEmailPassword(emailController.text, passwordController.text);
+      // AuthGate nos redirigirá automáticamente
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context, 
+          builder: (context) => AlertDialog(
+            title: Text(e.toString()),
+          ),
+        );
       }
-      
     }
   }
-  //Build UI
+
   @override
   Widget build(BuildContext context) {
-    //Scaffold
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-
-      //body
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          child: Center(
+        child: Center(
+          child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 50),
-          
-            //Logo
-            Icon(Icons.lock_open_rounded,
-            size: 72,
-            color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 50),
-          
-            //Welcome back message
-            Text('Welcome Back, you\'ve been missed!', 
-            style:TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 25),
-          
-            //Email textfield
-            MyTextField(controller: emailController,
-              hintText: 'Enter email..',
-              obscureText: false,
-              ),
-            //Password textfield
-            MyTextField(controller: pwController,
-              hintText: 'Enter password..',
-              obscureText: true,
-            ),
-            const SizedBox(height: 10),
 
-            //Forgot password text
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text('Forgot Password?',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.bold,
+                Icon(
+                  Icons.lock_open,
+                  size: 60,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-              ),
-            ),  
-            const SizedBox(height: 25),
 
-            //sign in button
-            MyButton(text: "LogIn",
-              onTap: logIn,
-              ),
-              const SizedBox(height: 50),
-              //Not a member? register now
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text( 'Not a member? ',
+                const SizedBox(height: 50),
+
+                Text(
+                  "Bienvenido de nuevo",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
-                  ),),
+                    fontSize: 16,
+                  ),
+                ),
 
-                  const SizedBox(width: 5),
+                const SizedBox(height: 25),
 
-                  GestureDetector(
-                    onTap: widget.onTap,
-                    child: Text('Register Now',
-                    style: TextStyle(color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold),),
-                  )
-                ],
-              )
-              
-          ],
+                MyTextField(
+                  controller: emailController, 
+                  hintText: "Email", 
+                  obscureText: false
+                ),
+
+                const SizedBox(height: 10),
+
+                MyTextField(
+                  controller: passwordController, 
+                  hintText: "Contraseña", 
+                  obscureText: true
+                ),
+
+                const SizedBox(height: 25),
+
+                MyButton(
+                  text: "Iniciar Sesión", 
+                  onTap: login
+                ),
+
+                const SizedBox(height: 25),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "¿No eres miembro?",
+                      style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                    ),
+                    const SizedBox(width: 5),
+                    GestureDetector(
+                      onTap: widget.onTap,
+                      child: Text(
+                        "Regístrate ahora",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

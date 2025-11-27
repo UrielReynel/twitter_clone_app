@@ -1,6 +1,10 @@
+/*
+  UBICACIÓN: lib/services/auth/login_or_register.dart
+*/
+
 import 'package:flutter/material.dart';
-import 'package:twitter_clone_app/pages/login_page.dart';
-import 'package:twitter_clone_app/pages/register_page.dart';
+import '../../pages/login_page.dart';
+import '../../pages/register_page.dart';
 
 class LoginOrRegister extends StatefulWidget {
   const LoginOrRegister({super.key});
@@ -10,11 +14,11 @@ class LoginOrRegister extends StatefulWidget {
 }
 
 class _LoginOrRegisterState extends State<LoginOrRegister> {
-  //initially show login page
+  // Inicialmente mostrar página de Login
   bool showLoginPage = true;
 
-  //toggle between login and register pages
-  void togglePages(){
+  // Función para alternar páginas
+  void togglePages() {
     setState(() {
       showLoginPage = !showLoginPage;
     });
@@ -22,15 +26,10 @@ class _LoginOrRegisterState extends State<LoginOrRegister> {
 
   @override
   Widget build(BuildContext context) {
-    if(showLoginPage){
-      return  LoginPage(
-        onTap: togglePages,
-      );
+    if (showLoginPage) {
+      return LoginPage(onTap: togglePages);
     } else {
-      return  RegisterPage(
-        onTap: togglePages,
-      );
+      return RegisterPage(onTap: togglePages);
     }
-    
   }
 }
