@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/database/database_service.dart';
+import '../models/user.dart';
 
 class BlockedUsersPage extends StatelessWidget {
   const BlockedUsersPage({super.key});
@@ -14,7 +15,7 @@ class BlockedUsersPage extends StatelessWidget {
         foregroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: StreamBuilder<List<String>>(
-        stream: databaseService.getBlockedUidsStream(), // Escuchar cambios
+        stream: databaseService.getBlockedUidsStream(),
         builder: (context, snapshot) {
            if (snapshot.connectionState == ConnectionState.waiting) {
              return const Center(child: CircularProgressIndicator());
@@ -31,23 +32,42 @@ class BlockedUsersPage extends StatelessWidget {
              itemBuilder: (context, index) {
                final userId = blockedUids[index];
                
-               // Aquí deberíamos cargar los datos del usuario bloqueado
-               // Por simplicidad, mostramos un tile genérico con opción a desbloquear
-               return ListTile(
-                 title: Text(userId), // Idealmente mostrar nombre
-                 subtitle: const Text("Usuario bloqueado"),
-                 trailing: IconButton(
-                   icon: const Icon(Icons.lock_open),
-                   onPressed: () async {
-                      // Desbloquear
-                      await databaseService.unblockUser(userId);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Usuario desbloqueado"))
-                        );
-                      }
-                   },
-                 ),
+               // Cargar datos del usuario bloqueado
+               return FutureBuilder<UserProfile?>(
+                 future: databaseService.getUserFromFirebase(userId),
+                 builder: (context, userSnapshot) {
+                   if (userSnapshot.connectionState == ConnectionState.waiting) {
+                     return const ListTile(
+                       title: Text("Cargando..."),
+                       leading: CircularProgressIndicator(),
+                     );
+                   }
+
+                   final user = userSnapshot.data;
+                   
+                   return ListTile(
+                     leading: Icon(
+                       Icons.person,
+                       color: Theme.of(context).colorScheme.primary,
+                     ),
+                     title: Text(user?.name ?? "Usuario desconocido"),
+                     subtitle: Text("@${user?.username ?? "usuario"}"),
+                     trailing: IconButton(
+                       icon: const Icon(Icons.lock_open),
+                       tooltip: "Desbloquear usuario",
+                       onPressed: () async {
+                          await databaseService.unblockUser(userId);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("${user?.username ?? "Usuario"} desbloqueado")
+                              ),
+                            );
+                          }
+                       },
+                     ),
+                   );
+                 },
                );
              },
            );

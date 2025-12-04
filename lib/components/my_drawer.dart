@@ -1,7 +1,13 @@
+/*
+  UBICACIÓN: lib/components/my_drawer.dart
+  ESTADO: COMPLETO (Agregada la navegación a SearchPage)
+*/
+
 import 'package:flutter/material.dart';
-import '../services/auth/auth_service.dart'; // Asegúrate de tener este servicio
-import '../pages/settings_page.dart'; // Y la página de configuración
-import '../pages/profile_page.dart';  // Y la página de perfil
+import '../services/auth/auth_service.dart';
+import '../pages/settings_page.dart';
+import '../pages/profile_page.dart';
+import '../pages/search_page.dart'; // <--- IMPORTAR ESTO
 import 'my_drawer_tile.dart';
 
 class MyDrawer extends StatelessWidget {
@@ -9,7 +15,6 @@ class MyDrawer extends StatelessWidget {
 
   final _auth = AuthService();
 
-  // Función para cerrar sesión
   void logout() {
     _auth.logout();
   }
@@ -20,7 +25,7 @@ class MyDrawer extends StatelessWidget {
       backgroundColor: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
-          // 1. Logo en la cabecera
+          // Logo
           DrawerHeader(
             child: Icon(
               Icons.person,
@@ -31,16 +36,16 @@ class MyDrawer extends StatelessWidget {
 
           const SizedBox(height: 25),
 
-          // 2. Opción INICIO
+          // INICIO
           MyDrawerTile(
             title: "I N I C I O",
             icon: Icons.home,
             onTap: () {
-              Navigator.pop(context); // Cierra el drawer
+              Navigator.pop(context);
             },
           ),
 
-          // 3. Opción PERFIL (Te dirigirá a la profile_page que creaste vacía)
+          // PERFIL
           MyDrawerTile(
             title: "P E R F I L",
             icon: Icons.person,
@@ -49,15 +54,13 @@ class MyDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  // IMPORTANTE: Aquí usaremos el uid actual, por ahora lo dejamos así
                   builder: (context) => ProfilePage(uid: _auth.getCurrentUid()),
                 ),
               );
             },
           ),
 
-           // 4. Opción BÚSQUEDA (Agregaremos esto más adelante en search_page)
-           /*
+          // BUSCAR (AÑADIDO)
           MyDrawerTile(
             title: "B U S C A R",
             icon: Icons.search,
@@ -69,9 +72,8 @@ class MyDrawer extends StatelessWidget {
               );
             },
           ),
-          */
 
-          // 5. Opción CONFIGURACIÓN
+          // AJUSTES
           MyDrawerTile(
             title: "A J U S T E S",
             icon: Icons.settings,
@@ -84,9 +86,9 @@ class MyDrawer extends StatelessWidget {
             },
           ),
 
-          const Spacer(), // Empuja todo lo siguiente hacia abajo
+          const Spacer(),
 
-          // 6. Opción SALIR
+          // SALIR
           MyDrawerTile(
             title: "S A L I R",
             icon: Icons.logout,

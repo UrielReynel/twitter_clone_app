@@ -21,7 +21,7 @@ class UserProfile{
       email: doc['email'],
       name: doc['name'],
       username: doc['username'],
-      bio: doc['bio'],
+      bio: doc['bio'] ?? '',
     );
   }
 

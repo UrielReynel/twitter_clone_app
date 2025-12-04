@@ -1,5 +1,6 @@
 /*
   UBICACIÓN: lib/services/database/database_service.dart
+  ESTADO: COMPLETO FINAL (Incluye Posts por Usuario, Search, Follow, Moderación)
 */
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,7 +23,6 @@ class DatabaseService {
   // Guardar info de usuario nuevo al registrarse
   Future<void> saveUserInfoInFirebase({required String name, required String email}) async {
     String uid = _auth.currentUser!.uid;
-    // Creamos un username básico usando la parte anterior al @ del correo
     String username = email.split('@')[0];
 
     UserProfile user = UserProfile(
@@ -30,10 +30,9 @@ class DatabaseService {
       name: name,
       email: email,
       username: username,
-      bio: '', // Bio vacía al inicio
+      bio: '', 
     );
 
-    // Guardar en la colección 'Users'
     await _db.collection("Users").doc(uid).set(user.toMap());
   }
 
@@ -54,7 +53,7 @@ class DatabaseService {
     await _db.collection("Users").doc(uid).update({'bio': bio});
   }
 
-  // Buscar usuarios por nombre en la base de datos
+  // Buscar usuarios por nombre
   Future<List<UserProfile>> searchUsers(String searchTerm) async {
     try {
       QuerySnapshot snapshot = await _db
@@ -79,13 +78,11 @@ class DatabaseService {
   Future<void> postMessageInFirebase(String message) async {
     try {
       String uid = _auth.currentUser!.uid;
-      
-      // Necesitamos los datos del usuario para poner su nombre en el post
       UserProfile? user = await getUserFromFirebase(uid);
 
       if (user != null) {
         Post newPost = Post(
-          id: '', // Firebase generará el ID
+          id: '', // Firebase genera el ID
           uid: uid,
           name: user.name,
           username: user.username,
@@ -102,18 +99,49 @@ class DatabaseService {
     }
   }
 
-  // Obtener todos los posts (Stream para tiempo real)
+  // Obtener TODOS los posts (Para el Home)
   Stream<List<Post>> getAllPosts() {
+    final currentUserId = _auth.currentUser!.uid;
+    
     return _db
         .collection("Posts")
-        .orderBy('timestamp', descending: true) // Los más nuevos primero
+        .orderBy('timestamp', descending: true)
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) => Post.fromDocument(doc)).toList();
+        .asyncMap((snapshot) async {
+      // Obtener lista de usuarios bloqueados
+      final blockedUsersSnapshot = await _db
+          .collection("Users")
+          .doc(currentUserId)
+          .collection("BlockedUsers")
+          .get();
+      
+      final blockedUids = blockedUsersSnapshot.docs.map((doc) => doc.id).toList();
+      
+      // Filtrar posts de usuarios bloqueados
+      return snapshot.docs
+          .map((doc) => Post.fromDocument(doc))
+          .where((post) => !blockedUids.contains(post.uid))
+          .toList();
     });
   }
 
-  // Borrar post (Esta función se llama desde la UI si eres el dueño)
+  // Obtener posts de un USUARIO ESPECÍFICO (Para el Perfil)
+  Stream<List<Post>> getPostsByUser(String uid) {
+    return _db
+        .collection("Posts")
+        .where('uid', isEqualTo: uid)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .asyncMap((snapshot) async {
+          return snapshot.docs.map((doc) => Post.fromDocument(doc)).toList();
+        })
+        .handleError((error) {
+          print('Error al cargar posts: $error');
+          return <Post>[];
+        });
+  }
+
+  // Borrar post
   Future<void> deletePost(String postId) async {
     await _db.collection("Posts").doc(postId).delete();
   }
@@ -124,7 +152,6 @@ class DatabaseService {
     ===========================================================================
   */
 
-  // Dar o quitar Like a un post
   Future<void> toggleLike(String postId) async {
     try {
       String uid = _auth.currentUser!.uid;
@@ -132,18 +159,14 @@ class DatabaseService {
 
       await _db.runTransaction((transaction) async {
         DocumentSnapshot postSnapshot = await transaction.get(postDoc);
-        
-        // Obtener lista actual de likes
         List<String> likes = List<String>.from(postSnapshot['likes'] ?? []);
 
-        // Lógica de toggle
         if (likes.contains(uid)) {
-          likes.remove(uid); // Si ya estaba, lo quita
+          likes.remove(uid);
         } else {
-          likes.add(uid); // Si no estaba, lo agrega
+          likes.add(uid);
         }
 
-        // Actualizar en BD
         transaction.update(postDoc, {'likes': likes});
       });
     } catch (e) {
@@ -157,7 +180,6 @@ class DatabaseService {
     ===========================================================================
   */
 
-  // Agregar un comentario a un post
   Future<void> addComment(String postId, String message) async {
     try {
       String uid = _auth.currentUser!.uid;
@@ -175,8 +197,6 @@ class DatabaseService {
         );
 
         Map<String, dynamic> commentMap = newComment.toMap();
-        
-        // Guardamos los comentarios dentro de una sub-colección del post
         await _db.collection("Posts").doc(postId).collection("Comments").add(commentMap);
       }
     } catch (e) {
@@ -184,7 +204,6 @@ class DatabaseService {
     }
   }
 
-  // Obtener comentarios de un post específico
   Stream<List<Comment>> getComments(String postId) {
     return _db
         .collection("Posts")
@@ -199,11 +218,85 @@ class DatabaseService {
 
   /*
     ===========================================================================
-    REPORTAR Y BLOQUEAR (Requisito App Store)
+    SEGUIR (FOLLOW SYSTEM)
     ===========================================================================
   */
 
-  // Reportar usuario o post
+  Future<void> followUser(String uidToFollow) async {
+    final currentUid = _auth.currentUser!.uid;
+
+    // Agregar a mi lista de "Following"
+    await _db
+        .collection("Users")
+        .doc(currentUid)
+        .collection("Following")
+        .doc(uidToFollow)
+        .set({});
+
+    // Agregarme a su lista de "Followers"
+    await _db
+        .collection("Users")
+        .doc(uidToFollow)
+        .collection("Followers")
+        .doc(currentUid)
+        .set({});
+  }
+
+  Future<void> unfollowUser(String uidToUnfollow) async {
+    final currentUid = _auth.currentUser!.uid;
+
+    // Quitar de mi "Following"
+    await _db
+        .collection("Users")
+        .doc(currentUid)
+        .collection("Following")
+        .doc(uidToUnfollow)
+        .delete();
+
+    // Quitar de su "Followers"
+    await _db
+        .collection("Users")
+        .doc(uidToUnfollow)
+        .collection("Followers")
+        .doc(currentUid)
+        .delete();
+  }
+
+  Future<bool> isFollowing(String uid) async {
+    final currentUid = _auth.currentUser!.uid;
+    final doc = await _db
+        .collection("Users")
+        .doc(currentUid)
+        .collection("Following")
+        .doc(uid)
+        .get();
+    return doc.exists;
+  }
+
+  Stream<int> getFollowerCount(String uid) {
+    return _db
+        .collection("Users")
+        .doc(uid)
+        .collection("Followers")
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Stream<int> getFollowingCount(String uid) {
+    return _db
+        .collection("Users")
+        .doc(uid)
+        .collection("Following")
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  /*
+    ===========================================================================
+    REPORTAR Y BLOQUEAR (MODERACIÓN)
+    ===========================================================================
+  */
+
   Future<void> reportUser(String messageId, String userId) async {
     final currentUserId = _auth.currentUser!.uid;
     
@@ -217,11 +310,9 @@ class DatabaseService {
     await _db.collection("Reports").add(report);
   }
 
-  // Bloquear usuario
   Future<void> blockUser(String userId) async {
     final currentUserId = _auth.currentUser!.uid;
     
-    // Agregar a la lista de bloqueados del usuario actual
     await _db
         .collection("Users")
         .doc(currentUserId)
@@ -230,7 +321,6 @@ class DatabaseService {
         .set({});
   }
 
-  // Desbloquear usuario
   Future<void> unblockUser(String blockedUserId) async {
     final currentUserId = _auth.currentUser!.uid;
     
@@ -242,7 +332,6 @@ class DatabaseService {
         .delete();
   }
 
-  // Obtener lista de UIDs bloqueados (para filtrar el feed)
   Stream<List<String>> getBlockedUidsStream() {
     final currentUserId = _auth.currentUser!.uid;
     
